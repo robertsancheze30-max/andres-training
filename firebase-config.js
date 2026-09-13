@@ -1,11 +1,9 @@
-// Reemplaza estos valores con los de tu proyecto Firebase "andres-training"
-// (Firebase console -> Configuración del proyecto -> Tus apps -> SDK setup)
 const firebaseConfig = {
-  apiKey: "TU_API_KEY",
+  apiKey: "AIzaSyCeH7eUrdCCmK7xfMB4XNNMI61n5x0I-wU",
   authDomain: "andres-training.firebaseapp.com",
   databaseURL: "https://andres-training-default-rtdb.firebaseio.com",
   projectId: "andres-training",
-  storageBucket: "andres-training.appspot.com",
-  messagingSenderId: "TU_SENDER_ID",
-  appId: "TU_APP_ID"
+  storageBucket: "andres-training.firebasestorage.app",
+  messagingSenderId: "87827397284",
+  appId: "1:87827397284:web:fb204d1e52186cddb10431"
 };
