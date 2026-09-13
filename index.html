@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Andrés Training</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="wrap">
+
+  <!-- LOGIN -->
+  <div id="login-screen">
+    <div style="padding-top:60px;">
+      <h1 class="display" style="font-size:32px;">ANDRÉS<br>TRAINING</h1>
+      <p class="label" style="margin-top:8px;">Ingresa tu código de alumno</p>
+      <div class="plate" style="margin-top:20px;">
+        <input id="code-input" placeholder="Código" autocapitalize="characters">
+        <button onclick="login()">Entrar</button>
+        <p id="login-error" style="color:var(--burn);font-size:13px;margin-top:10px;"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- APP -->
+  <div id="app-screen" class="hidden">
+    <div class="topbar">
+      <div>
+        <div class="display" id="student-name">—</div>
+        <div class="sub">Andrés Training</div>
+      </div>
+      <button class="secondary" style="width:auto;padding:8px 14px;font-size:12px;" onclick="logout()">Salir</button>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" data-tab="clases" onclick="switchTab('clases')">Mis clases</div>
+      <div class="tab" data-tab="progreso" onclick="switchTab('progreso')">Mi progreso</div>
+    </div>
+
+    <div id="tab-clases">
+      <div id="classes-list"></div>
+    </div>
+
+    <div id="tab-progreso" class="hidden">
+      <div class="plate" id="latest-progress">
+        <div class="label">Último registro</div>
+        <div class="empty">Aún no hay registros</div>
+      </div>
+      <div id="progress-history"></div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script>
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+let currentStudentId = null;
+
+function login(){
+  const code = document.getElementById('code-input').value.trim().toUpperCase();
+  if(!code){ return; }
+  db.ref('students').orderByChild('code').equalTo(code).once('value').then(snap=>{
+    if(!snap.exists()){
+      document.getElementById('login-error').textContent = 'Código no válido.';
+      return;
+    }
+    const data = snap.val();
+    const studentId = Object.keys(data)[0];
+    const student = data[studentId];
+    currentStudentId = studentId;
+    localStorage.removeItem('at_student_id'); // no persistente por privacidad del código compartido
+    document.getElementById('student-name').textContent = student.name;
+    document.getElementById('login-screen').classList.add('hidden');
+    document.getElementById('app-screen').classList.remove('hidden');
+    loadClasses(studentId);
+    loadProgress(studentId);
+  });
+}
+
+function logout(){
+  currentStudentId = null;
+  document.getElementById('app-screen').classList.add('hidden');
+  document.getElementById('login-screen').classList.remove('hidden');
+  document.getElementById('code-input').value = '';
+  document.getElementById('login-error').textContent = '';
+}
+
+function switchTab(tab){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===tab));
+  document.getElementById('tab-clases').classList.toggle('hidden', tab!=='clases');
+  document.getElementById('tab-progreso').classList.toggle('hidden', tab!=='progreso');
+}
+
+function loadClasses(studentId){
+  db.ref('classes').orderByChild('studentId').equalTo(studentId).on('value', snap=>{
+    const list = document.getElementById('classes-list');
+    if(!snap.exists()){
+      list.innerHTML = '<div class="plate"><div class="empty">No tienes clases agendadas todavía.</div></div>';
+      return;
+    }
+    const classes = Object.values(snap.val()).sort((a,b)=> (a.date+a.time).localeCompare(b.date+b.time));
+    list.innerHTML = '<div class="plate">' + classes.map(c => `
+      <div class="item">
+        <div>
+          <div class="name">${formatDate(c.date)} · ${c.time}</div>
+          <div class="meta status-${c.status}">${c.status}</div>
+        </div>
+      </div>
+    `).join('') + '</div>';
+  });
+}
+
+function loadProgress(studentId){
+  db.ref('progress/'+studentId).on('value', snap=>{
+    const historyDiv = document.getElementById('progress-history');
+    const latestDiv = document.getElementById('latest-progress');
+    if(!snap.exists()){
+      latestDiv.innerHTML = '<div class="label">Último registro</div><div class="empty">Aún no hay registros</div>';
+      historyDiv.innerHTML = '';
+      return;
+    }
+    const records = Object.values(snap.val()).sort((a,b)=> b.date.localeCompare(a.date));
+    const latest = records[0];
+    latestDiv.innerHTML = `
+      <div class="label">Último registro · ${formatDate(latest.date)}</div>
+      <div class="big-num">${latest.weight} kg</div>
+      <div class="meta" style="margin-top:6px;">
+        ${latest.chest ? 'Pecho: '+latest.chest+'cm · ' : ''}${latest.waist ? 'Cintura: '+latest.waist+'cm · ' : ''}${latest.arm ? 'Brazo: '+latest.arm+'cm' : ''}
+      </div>
+      ${latest.notes ? '<div class="meta" style="margin-top:6px;">"'+latest.notes+'"</div>' : ''}
+    `;
+    historyDiv.innerHTML = '<div class="plate">' + records.slice(1).map(r => `
+      <div class="item">
+        <div>
+          <div class="name">${formatDate(r.date)}</div>
+          <div class="meta">${r.weight} kg</div>
+        </div>
+      </div>
+    `).join('') + '</div>';
+  });
+}
+
+function formatDate(d){
+  const [y,m,day] = d.split('-');
+  return day+'/'+m+'/'+y;
+}
+</script>
+</body>
+</html>
