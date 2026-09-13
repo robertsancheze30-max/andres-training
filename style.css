@@ -127,6 +127,23 @@ button.danger{
 
 .hidden{display:none !important;}
 
+.field-wrap{
+  position:relative;
+  margin-bottom:10px;
+}
+.field-wrap input{
+  margin-bottom:0;
+}
+.field-placeholder{
+  position:absolute;
+  left:12px;
+  top:50%;
+  transform:translateY(-50%);
+  color:var(--muted);
+  font-size:15px;
+  pointer-events:none;
+}
+
 .item{
   display:flex;
   justify-content:space-between;

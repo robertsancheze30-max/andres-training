@@ -35,10 +35,14 @@
     <div class="plate">
       <div class="label" style="margin-bottom:8px;">Nueva clase</div>
       <select id="class-student-select"><option value="">Selecciona alumno</option></select>
-      <div class="label" style="margin:4px 0 4px;">Fecha</div>
-      <input id="class-date" type="date">
-      <div class="label" style="margin:4px 0 4px;">Hora</div>
-      <input id="class-time" type="time">
+      <div class="field-wrap">
+        <input id="class-date" type="date" oninput="toggleFieldLabel(this)">
+        <span class="field-placeholder">Fecha</span>
+      </div>
+      <div class="field-wrap">
+        <input id="class-time" type="time" oninput="toggleFieldLabel(this)">
+        <span class="field-placeholder">Hora</span>
+      </div>
       <button onclick="addClass()">Agendar clase</button>
     </div>
     <div id="classes-admin-list"></div>
@@ -51,8 +55,10 @@
     </div>
     <div class="plate">
       <div class="label" style="margin-bottom:8px;">Nuevo registro</div>
-      <div class="label" style="margin:4px 0 4px;">Fecha</div>
-      <input id="progress-date" type="date">
+      <div class="field-wrap">
+        <input id="progress-date" type="date" oninput="toggleFieldLabel(this)">
+        <span class="field-placeholder">Fecha</span>
+      </div>
       <input id="progress-weight" type="number" step="0.1" placeholder="Peso (kg)">
       <input id="progress-chest" type="number" step="0.1" placeholder="Pecho (cm) - opcional">
       <input id="progress-waist" type="number" step="0.1" placeholder="Cintura (cm) - opcional">
@@ -78,6 +84,15 @@ function switchTab(tab){
   ['alumnos','agenda','progreso'].forEach(t=>{
     document.getElementById('tab-'+t).classList.toggle('hidden', t!==tab);
   });
+}
+
+function toggleFieldLabel(input){
+  const placeholder = input.nextElementSibling;
+  if(input.value){
+    placeholder.classList.add('hidden');
+  } else {
+    placeholder.classList.remove('hidden');
+  }
 }
 
 function genCode(){
@@ -148,6 +163,8 @@ function addClass(){
   db.ref('classes').push({studentId, date, time, status:'pendiente'}).then(()=>{
     document.getElementById('class-date').value = '';
     document.getElementById('class-time').value = '';
+    toggleFieldLabel(document.getElementById('class-date'));
+    toggleFieldLabel(document.getElementById('class-time'));
   });
 }
 
@@ -221,6 +238,7 @@ function addProgress(){
   };
   db.ref('progress/'+studentId).push(record).then(()=>{
     document.getElementById('progress-date').value = '';
+    toggleFieldLabel(document.getElementById('progress-date'));
     document.getElementById('progress-weight').value = '';
     document.getElementById('progress-chest').value = '';
     document.getElementById('progress-waist').value = '';
